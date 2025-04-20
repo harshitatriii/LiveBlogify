@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+
+{% block title %}Generated Blog{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2 class="mb-4 text-center">📝 Your Blog is Ready!</h2>
+
+    <div class="card p-4 mb-3">
+        <p id="blog-content">{{ blog_content }}</p>
+    </div>
+
+    <div class="text-center">
+        <button class="btn btn-primary" onclick="copyBlog()">Copy Blog</button>
+        <a href="/download-blog/{{ file_name }}/" class="btn btn-success">Download Blog</a>
+        <a href="{% url 'home' %}" class="btn btn-secondary">Upload Another</a>
+    </div>
+</div>
+
+<script>
+function copyBlog() {
+    const text = document.getElementById("blog-content").innerText;
+    navigator.clipboard.writeText(text).then(() => {
+        alert("Blog copied to clipboard!");
+    });
+}
+</script>
+{% endblock %}

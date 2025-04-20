@@ -1,0 +1,300 @@
+{% extends 'base.html' %}
+
+{% block extra_css %}
+<style>
+
+    body {
+        background: linear-gradient(to right, #1e3c72, #2a5298);
+        color: white;
+    }
+
+    .output-box {
+        background-color: rgba(255, 255, 255, 0.9);
+        color: #212529;
+    }
+
+    .step-button i {
+        color: white;
+    }
+    
+
+
+
+    .step-button {
+        min-width: 200px;
+        margin: 10px;
+        transition: transform 0.2s ease;
+    }
+
+    .step-button:hover {
+        transform: scale(1.05);
+    }
+
+    .output-box {
+        background-color: #ffffff;
+        border-radius: 10px;
+        padding: 20px;
+        color: #212529;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .btn-outline-warning {
+        color: #856404;
+        border-color: #ffc107;
+    }
+
+    .btn-outline-warning:hover {
+        background-color: #ffc107;
+        color: #212529;
+    }
+
+    .btn-outline-success:hover {
+        background-color: #198754;
+        color: #fff;
+    }
+
+    .btn-outline-primary:hover {
+        background-color: #0d6efd;
+        color: #fff;
+    }
+
+
+
+    {% comment %} copy button after transcription :  {% endcomment %}
+
+    /* Style for positioning Copy Text button in the top-right corner */
+    .output-box .d-flex {
+        position: relative;
+    }
+    
+    .output-box .btn-outline-dark {
+        position: absolute;
+        top: 0;
+        right: 0;
+        margin-top: 0.25rem; /* Space from top */
+        margin-right: 0.25rem; /* Space from right */
+    }
+    
+    .output-box .btn-outline-dark i {
+        color: black; /* Make the icon color black for better contrast */
+    }
+    
+    /* Optional: Change background and button color for better visibility */
+    .output-box h5, .output-box p {
+        background-color: #f8f9fa; /* Light background color */
+        padding: 3px;
+    }
+
+    .btn-copy {
+        font-size: 0.8rem;
+        padding: 2px 8px;
+        line-height: 1;
+    }
+    
+    
+</style>
+
+
+
+{% endblock %}
+
+{% block content %}
+<div class="container mt-5 text-center">
+
+    <h2 class="mb-4 fw-bold text-success">🎉 Video Uploaded Successfully!</h2>
+
+    <div class="alert alert-info mx-auto" style="max-width: 500px;">
+        <strong>🎥 Video:</strong> {{ video_name }}
+    </div>
+
+    <!-- Step Buttons -->
+    <div class="d-flex flex-wrap justify-content-center mt-4">
+        <button class="btn btn-outline-secondary step-button" onclick="extractAudio()">
+            <i class="bi bi-music-note-beamed me-1"></i> Extract Audio
+        </button>
+        <button class="btn btn-outline-primary step-button" onclick="transcribeAudio()">
+            <i class="bi bi-mic me-1"></i> Transcribe
+        </button>
+        <button class="btn btn-outline-warning step-button" onclick="summarizeText()">
+            <i class="bi bi-lightbulb me-1"></i> Summarize
+        </button>
+        <button class="btn btn-outline-success step-button" onclick="generateBlog()">
+            <i class="bi bi-journal-text me-1"></i> Generate Blog
+        </button>
+    </div>
+
+    <!-- Output Area -->
+    <div class="mt-5" id="output"></div>
+</div>
+
+<script>
+    const videoPath = "{{ video_path|escapejs }}";
+    const audioFileName = videoPath.split('/').pop().replace('.mp4', '.mp3');
+    const audioPath = `videos/${audioFileName}`;
+    let transcriptionText = "";
+    let audioExtracted = false;
+
+    function extractAudio() {
+        const outputDiv = document.getElementById('output');
+        outputDiv.innerHTML = `
+            <div class="text-center">
+                <div class="spinner-border text-info" role="status"></div>
+                <p class="mt-2">🔊 Extracting audio, please wait...</p>
+            </div>`;
+    
+        fetch("{% url 'extract_audio' %}?video_path=" + encodeURIComponent(videoPath) + "&audio_path=" + encodeURIComponent(audioPath))
+            .then(res => {
+                if (!res.ok) throw new Error("Extraction failed");
+                return res.blob();
+            })
+            .then(blob => {
+                audioExtracted = true;
+                const audioUrl = URL.createObjectURL(blob);
+                outputDiv.innerHTML = `
+                    <div class="output-box mx-auto" style="max-width: 600px;">
+                        <h5 class="mb-3">✅ Audio Extracted Successfully!</h5>
+                        <audio controls style="width: 100%; margin-bottom: 15px;">
+                            <source src="${audioUrl}" type="audio/mpeg">
+                            Your browser does not support the audio element.
+                        </audio>
+                        <a href="${audioUrl}" download="${audioFileName}" class="btn btn-outline-info">
+                            <i class="bi bi-download me-1 text-dark"></i> Download Audio
+                        </a>
+                    </div>`;
+            })
+            .catch(() => {
+                outputDiv.innerHTML = '<p class="text-danger">❌ Audio extraction failed!</p>';
+            });
+    }
+    
+
+    function transcribeAudio() {
+        const outputDiv = document.getElementById('output');
+
+        if (!audioExtracted) return alert("⚠️ Please Extract audio first.");
+    
+        if (!audioPath || audioPath.trim() === "") {
+            outputDiv.innerHTML = `
+                <div class="alert alert-warning text-center" role="alert">
+                    ⚠️ Please extract audio before attempting transcription.
+                </div>`;
+            return;
+        }
+    
+        outputDiv.innerHTML = `
+            <div class="text-center">
+                <div class="spinner-border text-primary" role="status"></div>
+                <p class="mt-2">🗣️ Transcribing audio, please wait...</p>
+            </div>`;
+    
+        fetch("{% url 'transcribe_audio' %}", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": '{{ csrf_token }}'
+            },
+            body: JSON.stringify({ audio_file: audioPath })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success && data.transcription) {
+                transcriptionText = data.transcription;
+                outputDiv.innerHTML = `
+                    <div class="output-box mx-auto" style="max-width: 700px; text-align: left;">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <h5 class="mb-0">📝 Transcription:</h5>
+                            <button onclick="copyText('transcription-text')" class="btn btn-copy btn-sm btn-outline-dark py-0 px-2">
+                                Copy Text
+                            </button>
+                        </div>
+                        <p id="transcription-text" class="mt-2">${transcriptionText}</p>
+                    </div>`;
+            } else {
+                outputDiv.innerHTML = `<p class="text-danger">❌ Transcription failed: ${data.message || 'Unknown error'}</p>`;
+            }
+        })
+        .catch(() => {
+            outputDiv.innerHTML = '<p class="text-danger">❌ Transcription failed due to network or server issue.</p>';
+        });
+    }
+    
+    
+    
+    function summarizeText() {
+        if (!transcriptionText) return alert("⚠️ Please transcribe audio first.");
+    
+        const blob = new Blob([transcriptionText], { type: "text/plain" });
+        const formData = new FormData();
+        formData.append('file', blob, 'transcription.txt');
+    
+        const outputDiv = document.getElementById('output');
+        outputDiv.innerHTML += `
+            <div class="text-center mt-4" id="summaryLoading">
+                <div class="spinner-border text-warning" role="status"></div>
+                <p class="mt-2">💡 Summarizing text, please wait...</p>
+            </div>`;
+    
+        fetch("{% url 'summarize_text' %}", {
+            method: "POST",
+            body: formData
+        })
+        .then(res => res.json())
+        .then(data => {
+            document.getElementById('summaryLoading').remove();
+            if (data.success && data.html) {
+                outputDiv.innerHTML += data.html;
+            } else {
+                outputDiv.innerHTML += `<p class="text-danger">❌ Summarization failed: ${data.message || 'Unknown error'}</p>`;
+            }
+        })
+        .catch(() => {
+            document.getElementById('summaryLoading').remove();
+            outputDiv.innerHTML += `<p class="text-danger">❌ Summarization failed due to network or server issue.</p>`;
+        });
+    }
+    
+    
+    
+    
+
+    function copyText(elementId) {
+        const textElement = document.getElementById(elementId);
+        const range = document.createRange();
+        range.selectNode(textElement);
+        window.getSelection().removeAllRanges();
+        window.getSelection().addRange(range);
+        document.execCommand("copy");
+        window.getSelection().removeAllRanges();
+        alert("Text copied to clipboard!");
+    }
+    
+    
+
+    function generateBlog() {
+        const outputDiv = document.getElementById('output');
+
+        if (!transcriptionText) return alert("⚠️ Please transcribe audio first.");
+        outputDiv.innerHTML = `
+            <div class="text-center">
+                <div class="spinner-border text-success" role="status"></div>
+                <p class="mt-2">✍️ Generating blog, please wait...</p>
+            </div>`;
+
+        {% comment %} if (!transcriptionText) return alert("⚠️ Please transcribe audio first."); {% endcomment %}
+
+        fetch("{% url 'generate_blog' %}", {
+            method: "POST",
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({ transcription: transcriptionText })
+        })
+        .then(res => res.text())
+        .then(html => {
+            document.open(); document.write(html); document.close();
+        })
+        .catch(() => alert("Blog generation failed!"));
+    }
+</script>
+{% endblock %}

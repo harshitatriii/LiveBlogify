@@ -1,0 +1,19 @@
+# Ignore media and video folders
+media/
+videos/
+
+# Ignore video/audio file types
+*.mp4
+*.wav
+*.avi
+*.mkv
+
+# Ignore DB file
+*.sqlite3
+
+# Ignore Python cache and system files (bonus)
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.DS_Store
