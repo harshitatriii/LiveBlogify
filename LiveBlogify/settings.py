@@ -24,7 +24,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-h*$qtnanua7oil1ws7#f+^z_#gyx&c89gt4u)vsr2&t$w0_bt1'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# DEBUG = True
+DEBUG = os.environ.get('DEBUG', 'False') == 'True'
+
 
 # add hosts:-
 ALLOWED_HOSTS = ['liveblogify.onrender.com']
