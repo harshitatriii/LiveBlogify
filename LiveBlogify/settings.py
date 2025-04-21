@@ -29,7 +29,8 @@ DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
 
 # add hosts:-
-ALLOWED_HOSTS = ['liveblogify.onrender.com']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'liveblogify.onrender.com']
+
 
 
 
@@ -124,6 +125,9 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 STATICFILES_DIRS = [os.path.join(BASE_DIR, 'Static')]
+STATICFILES_DIRS = [os.path.join(BASE_DIR, 'Static')]
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles') 
+
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
@@ -132,4 +136,5 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
 

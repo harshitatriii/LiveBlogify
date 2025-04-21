@@ -1,0 +1,12 @@
+body{
+    background-color: rgb(3, 52, 62);
+    color: aliceblue;
+}
+
+h1{
+    text-align: center;
+}
+
+p{
+    size: 2em;
+}
