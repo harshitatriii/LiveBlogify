@@ -17,3 +17,7 @@ __pycache__/
 *.pyo
 *.pyd
 *.DS_Store
+
+
+echo "videos/videoplayback (2).wav" >> .gitignore
+
